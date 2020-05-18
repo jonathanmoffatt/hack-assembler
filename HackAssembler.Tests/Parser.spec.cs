@@ -77,5 +77,23 @@ namespace HackAssembler.Tests
             var result = parser.Parse("@counter  // stuff");
             result.AddressSymbol.Should().Be("counter");
         }
+
+        [TestMethod]
+        public void ShouldIdentifyCInstruction()
+        {
+            parser.Parse("M=D+1").Type.Should().Be(ParsedType.CInstruction);
+        }
+
+        [TestMethod]
+        public void ShouldIdentifyDestOfCInstruction()
+        {
+            parser.Parse("M=D+1").Dest.Should().Be(Dest.M);
+        }
+
+        [TestMethod]
+        public void ShouldIdentifyCompOfCInstruction()
+        {
+            parser.Parse("M=D+1").Comp.Should().Be(Comp.DPlusOne);
+        }
     }
 }
