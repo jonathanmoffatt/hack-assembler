@@ -42,12 +42,7 @@ namespace HackAssembler.Core
             var result = new Dictionary<string, Comp>();
             foreach(Comp c in Enum.GetValues(typeof(Comp)))
             {
-                var enumType = typeof(Comp);
-                var memberInfos = enumType.GetMember(c.ToString());
-                var enumValueMemberInfo = memberInfos.FirstOrDefault(m => m.DeclaringType == enumType);
-                var valueAttributes = enumValueMemberInfo.GetCustomAttributes(typeof(AssemblerMappingAttribute), false);
-                var attribute = (AssemblerMappingAttribute)valueAttributes[0];
-                result.Add(attribute.Assembler, c);
+                result.Add(c.GetAttribute<AssemblerMappingAttribute, Comp>().Assembler, c);
             }
             return result;
         }
