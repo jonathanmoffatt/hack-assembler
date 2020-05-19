@@ -13,8 +13,16 @@ namespace HackAssembler.Core
             else if (line == "")
                 return new ParseResult { Type = ParsedType.Whitespace };
             else if (line.StartsWith("(") && line.EndsWith(")"))
-                return new ParseResult { Type = ParsedType.Label, Label = line[1..^1] };
+                return ParseLabel(line);
             return ParseComputation(line);
+        }
+
+        private static ParseResult ParseLabel(string line)
+        {
+            string label = line[1..^1].Trim();
+            if (label == "")
+                return new ParseResult { Type = ParsedType.Unrecognised, Error = "Empty labels are not permitted." };
+            return new ParseResult { Type = ParsedType.Label, Label = label };
         }
 
         private ParseResult ParseComputation(string line)
@@ -23,22 +31,28 @@ namespace HackAssembler.Core
             bool hasDest = line.Contains('=');
             bool hasJump = line.Contains(';');
             string[] split = line.Split(new[] { "=", ";" }, StringSplitOptions.RemoveEmptyEntries);
-            return new ParseResult
+            try
             {
-                Type = ParsedType.CInstruction,
-                Dest = hasDest ? Enum.Parse<Dest>(split[0]) : (Dest?)null,
-                Comp = compMappings[split[hasDest ? 1 : 0]],
-                Jump = hasJump ? Enum.Parse<Jump>(split[hasDest ? 2 : 1]) : (Jump?)null
-            };
+                return new ParseResult
+                {
+                    Type = ParsedType.CInstruction,
+                    Dest = hasDest ? Enum.Parse<Dest>(split[0]) : (Dest?)null,
+                    Comp = compMappings[split[hasDest ? 1 : 0]],
+                    Jump = hasJump ? Enum.Parse<Jump>(split[hasDest ? 2 : 1]) : (Jump?)null
+                };
+            }
+            catch(Exception ex)
+            {
+                return new ParseResult { Type = ParsedType.Unrecognised, Error = ex.Message };
+            }
         }
 
         private static ParseResult ParseAddress(string line)
         {
-            var result = new ParseResult
-            {
-                Type = ParsedType.AInstruction
-            };
             line = line[1..];
+            if (line == "")
+                return new ParseResult { Type = ParsedType.Unrecognised, Error = "Empty addresses are not permitted." };
+            var result = new ParseResult { Type = ParsedType.AInstruction };
             if (int.TryParse(line, out int addr))
                 result.Address = addr;
             else

@@ -123,5 +123,61 @@ namespace HackAssembler.Tests
             result.Type.Should().Be(ParsedType.Label);
             result.Label.Should().Be("LOOP");
         }
+
+        [TestMethod]
+        public void ShouldTrimLabel()
+        {
+            ParseResult result = parser.Parse("(  LOOP  )");
+            result.Type.Should().Be(ParsedType.Label);
+            result.Label.Should().Be("LOOP");
+        }
+
+        [TestMethod]
+        public void ShouldRaiseErrorForInvalidDest()
+        {
+            ParseResult result = parser.Parse("Z=M+1");
+            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Error.Should().Be("Requested value 'Z' was not found.");
+        }
+
+        [TestMethod]
+        public void ShouldRaiseErrorForInvalidJump()
+        {
+            ParseResult result = parser.Parse("A=M+1;JUMP");
+            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Error.Should().Be("Requested value 'JUMP' was not found.");
+        }
+
+        [TestMethod]
+        public void ShouldRaiseErrorForInvalidComp()
+        {
+            ParseResult result = parser.Parse("M=Z+1");
+            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Error.Should().Be("The given key 'Z+1' was not present in the dictionary.");
+        }
+
+        [TestMethod]
+        public void ShouldRaiseErrorForInvalidLabel()
+        {
+            ParseResult result = parser.Parse("(SOMETHING");
+            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Error.Should().Be("The given key '(SOMETHING' was not present in the dictionary.");
+        }
+
+        [TestMethod]
+        public void ShouldRaiseErrorForEmptyLabel()
+        {
+            ParseResult result = parser.Parse("()");
+            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Error.Should().Be("Empty labels are not permitted.");
+        }
+
+        [TestMethod]
+        public void ShouldRaiseErrorForEmptyAddress()
+        {
+            ParseResult result = parser.Parse("@");
+            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Error.Should().Be("Empty addresses are not permitted.");
+        }
     }
 }

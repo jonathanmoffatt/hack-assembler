@@ -9,5 +9,7 @@
         public Dest? Dest { get; set; }
         public Comp? Comp { get; set; }
         public Jump? Jump { get; set; }
+
+        public string Error { get; set; }
     }
 }
