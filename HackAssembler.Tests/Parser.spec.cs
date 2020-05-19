@@ -95,5 +95,25 @@ namespace HackAssembler.Tests
         {
             parser.Parse("M=D+1").Comp.Should().Be(Comp.DPlusOne);
         }
+
+        [TestMethod]
+        public void ShouldSetCorrectJumpDetailsWithoutDest()
+        {
+            ParseResult result = parser.Parse("D&M;JGE");
+            result.Comp.Should().Be(Comp.DAndM);
+            result.Type.Should().Be(ParsedType.CInstruction);
+            result.Dest.Should().BeNull();
+            result.Jump.Should().Be(Jump.JGE);
+        }
+
+        [TestMethod]
+        public void ShouldSetCorrectJumpDetailsWithDest()
+        {
+            ParseResult result = parser.Parse("AMD=D|A;JEQ");
+            result.Comp.Should().Be(Comp.DOrA);
+            result.Type.Should().Be(ParsedType.CInstruction);
+            result.Dest.Should().Be(Dest.AMD);
+            result.Jump.Should().Be(Jump.JEQ);
+        }
     }
 }

@@ -8,27 +8,40 @@ namespace HackAssembler.Core
     {
         public ParseResult Parse(string line)
         {
-            ParseResult result = new ParseResult();
-            var compMappings = GetCompMappings();
             line = StripComments(line);
             if (line.StartsWith('@'))
-            {
-                result.Type = ParsedType.AInstruction;
-                line = line.Substring(1);
-                if (int.TryParse(line, out int addr))
-                    result.Address = addr;
-                else
-                    result.AddressSymbol = line;
-            }
+                return ParseAddress(line);
             else if (line == "")
-                result.Type = ParsedType.Whitespace;
-            else
+                return new ParseResult { Type = ParsedType.Whitespace };
+            return ParseComputation(line);
+        }
+
+        private ParseResult ParseComputation(string line)
+        {
+            var compMappings = GetCompMappings();
+            bool hasDest = line.Contains('=');
+            bool hasJump = line.Contains(';');
+            string[] split = line.Split(new[] { "=", ";" }, StringSplitOptions.RemoveEmptyEntries);
+            return new ParseResult
             {
-                result.Type = ParsedType.CInstruction;
-                result.Dest = Enum.Parse<Dest>(line.Split("=")[0]);
-                string rest = line.Split("=")[1];
-                result.Comp = compMappings[rest];
-            }
+                Type = ParsedType.CInstruction,
+                Dest = hasDest ? Enum.Parse<Dest>(split[0]) : (Dest?)null,
+                Comp = compMappings[split[hasDest ? 1 : 0]],
+                Jump = hasJump ? Enum.Parse<Jump>(split[hasDest ? 2 : 1]) : (Jump?)null
+            };
+        }
+
+        private static ParseResult ParseAddress(string line)
+        {
+            var result = new ParseResult
+            {
+                Type = ParsedType.AInstruction
+            };
+            line = line.Substring(1);
+            if (int.TryParse(line, out int addr))
+                result.Address = addr;
+            else
+                result.AddressSymbol = line;
             return result;
         }
 
