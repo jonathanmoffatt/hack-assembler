@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace HackAssembler.Core
 {
@@ -13,6 +12,8 @@ namespace HackAssembler.Core
                 return ParseAddress(line);
             else if (line == "")
                 return new ParseResult { Type = ParsedType.Whitespace };
+            else if (line.StartsWith("(") && line.EndsWith(")"))
+                return new ParseResult { Type = ParsedType.Label, Label = line[1..^1] };
             return ParseComputation(line);
         }
 
@@ -37,7 +38,7 @@ namespace HackAssembler.Core
             {
                 Type = ParsedType.AInstruction
             };
-            line = line.Substring(1);
+            line = line[1..];
             if (int.TryParse(line, out int addr))
                 result.Address = addr;
             else

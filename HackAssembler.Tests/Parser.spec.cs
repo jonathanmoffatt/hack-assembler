@@ -115,5 +115,13 @@ namespace HackAssembler.Tests
             result.Dest.Should().Be(Dest.AMD);
             result.Jump.Should().Be(Jump.JEQ);
         }
+
+        [TestMethod]
+        public void ShouldSetLabelDetails()
+        {
+            ParseResult result = parser.Parse("(LOOP)");
+            result.Type.Should().Be(ParsedType.Label);
+            result.Label.Should().Be("LOOP");
+        }
     }
 }

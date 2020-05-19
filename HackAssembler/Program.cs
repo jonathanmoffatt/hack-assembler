@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using HackAssembler.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,16 +11,23 @@ namespace HackAssembler
     {
         static void Main(string[] args)
         {
+            ServiceProvider serviceProvider = SetupIocAndLogging();
+            //var logger = GetLogger(serviceProvider);
+            //logger.LogInformation("Starting application");
+
             DisplayIntro();
             if (!CheckSourceFileOk(args)) return;
-            ServiceProvider serviceProvider = new ServiceCollection()
-                  .AddLogging((ILoggingBuilder loggingBuilder) => { loggingBuilder.AddConsole(); })
-                  .Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.Information)
-                  .AddSingleton<IParser, Parser>()
-                  .BuildServiceProvider(); ;
-            var logger = serviceProvider.GetService<ILoggerFactory>()
-                .CreateLogger<Program>();
-            logger.LogInformation("Starting application");
+
+            IParser parser = serviceProvider.GetRequiredService<IParser>();
+            string sourceFile = args[0];
+            using var stream = File.OpenText(sourceFile);
+            var parsedLines = new List<ParseResult>();
+            string line;
+            while ((line = stream.ReadLine()) != null)
+            {
+                parsedLines.Add(parser.Parse(line));
+            }
+
             /*
 
             show console name
@@ -79,14 +87,30 @@ namespace HackAssembler
             */
         }
 
+        private static ILogger<Program> GetLogger(ServiceProvider serviceProvider)
+        {
+            return serviceProvider.GetService<ILoggerFactory>().CreateLogger<Program>();
+        }
+
+        private static ServiceProvider SetupIocAndLogging()
+        {
+            return new ServiceCollection()
+                  .AddLogging((ILoggingBuilder loggingBuilder) => { loggingBuilder.AddConsole(); })
+                  .Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.Information)
+                  .AddSingleton<IParser, Parser>()
+                  .BuildServiceProvider();
+        }
+
         private static void DisplayIntro()
         {
             Console.WriteLine("HACK Assembler");
             Console.WriteLine("--------------");
-            Console.WriteLine("Usage: dotnet ./HackAssembler.dll [source-file]");
+            Console.WriteLine("Usage: dotnet ./HackAssembler.dll [source-file] [--console-only]");
             Console.WriteLine();
             Console.WriteLine("source-file:");
             Console.WriteLine("    Path to file containing assembly code (must have an .asm file extension)");
+            Console.WriteLine("--console-only:");
+            Console.WriteLine("    If this option is specified, results will be written to the console instead of to a .hack file.");
             Console.WriteLine("");
             Console.WriteLine("Results will be written to a file named after the source file, but with a .hack file extension. Any existing file with this name will be overwritten.");
             Console.WriteLine("");
@@ -96,25 +120,17 @@ namespace HackAssembler
         {
             string error = null;
             if (args.Length == 0)
-            {
                 error = "No source file specified.";
-            }
             else
             {
                 string sourceFile = args[0];
                 if (!File.Exists(sourceFile))
-                {
                     error = $"Source file {sourceFile} does not exist.";
-                }
                 else if (Path.GetExtension(sourceFile) != "asm")
-                {
                     error = $"Source file {sourceFile} does not have an .asm file extension.";
-                }
             }
             if (error != null)
-            {
                 Console.WriteLine(error);
-            }
             return error == null;
         }
     }
