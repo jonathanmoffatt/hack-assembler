@@ -17,6 +17,19 @@ namespace HackAssembler.Core
             return ParseComputation(line);
         }
 
+        public Dictionary<string, int> BuildSymbolTable(params ParseResult[] parsedLines)
+        {
+            int pc = 0;
+            var result = new Dictionary<string, int>();
+            foreach(var parsedLine in parsedLines)
+            {
+                if (parsedLine.Type == ParsedType.Label)
+                    result.Add(parsedLine.Label, pc);
+                pc++;
+            }
+            return result;
+        }
+
         private static ParseResult ParseLabel(string line)
         {
             string label = line[1..^1].Trim();
@@ -74,5 +87,6 @@ namespace HackAssembler.Core
             }
             return result;
         }
+
     }
 }

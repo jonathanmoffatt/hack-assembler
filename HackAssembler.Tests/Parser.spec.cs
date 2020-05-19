@@ -1,11 +1,13 @@
+using System.Collections.Generic;
 using FluentAssertions;
 using HackAssembler.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HackAssembler.Tests
 {
+    #region WhenParsingLinesOfAssemblyLanguage
     [TestClass]
-    public class WhenParsing
+    public class WhenParsingLinesOfAssemblyLanguage
     {
         private Parser parser;
 
@@ -180,4 +182,31 @@ namespace HackAssembler.Tests
             result.Error.Should().Be("Empty addresses are not permitted.");
         }
     }
+    #endregion
+
+    #region WhenBuildingASymbolTable
+    [TestClass]
+    public class WhenBuildingASymbolTAble
+    {
+        private Parser parser;
+        private ParseResult result1 = new ParseResult { Comp = Comp.AMinusD };
+        private ParseResult result2 = new ParseResult { Comp = Comp.MPlusOne };
+        private ParseResult result3 = new ParseResult { Comp = Comp.DAndM };
+
+        [TestInitialize]
+        public void Setup()
+        {
+            parser = new Parser();
+        }
+
+        [TestMethod]
+        public void ShouldSetAddressOfLabels()
+        {
+            Dictionary<string, int> dict = parser.BuildSymbolTable(result1, result2, new ParseResult { Type = ParsedType.Label, Label = "LOOP" }, result3);
+            dict.Should().HaveCount(1);
+            dict.Should().ContainKey("LOOP");
+            dict["LOOP"].Should().Be(2);
+        }
+    }
+    #endregion
 }
