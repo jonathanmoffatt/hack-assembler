@@ -20,12 +20,30 @@ namespace HackAssembler.Core
         public Dictionary<string, int> BuildSymbolTable(params ParseResult[] parsedLines)
         {
             int pc = 0;
+            int variableAddress = 16;
             var result = new Dictionary<string, int>();
             foreach(var parsedLine in parsedLines)
             {
                 if (parsedLine.Type == ParsedType.Label)
-                    result.Add(parsedLine.Label, pc);
+                {
+                    if (!result.ContainsKey(parsedLine.Label))
+                        result.Add(parsedLine.Label, pc);
+                    else
+                    {
+                        parsedLine.Type = ParsedType.Invalid;
+                        parsedLine.Error = "Duplicated label.";
+                    }
+
+                }
                 pc++;
+                if (parsedLine.Type == ParsedType.AInstruction && parsedLine.AddressSymbol != null)
+                {
+                    if (!result.ContainsKey(parsedLine.AddressSymbol))
+                    {
+                        result.Add(parsedLine.AddressSymbol, variableAddress);
+                        variableAddress++;
+                    }
+                }
             }
             return result;
         }
@@ -34,7 +52,7 @@ namespace HackAssembler.Core
         {
             string label = line[1..^1].Trim();
             if (label == "")
-                return new ParseResult { Type = ParsedType.Unrecognised, Error = "Empty labels are not permitted." };
+                return new ParseResult { Type = ParsedType.Invalid, Error = "Empty labels are not permitted." };
             return new ParseResult { Type = ParsedType.Label, Label = label };
         }
 
@@ -56,7 +74,7 @@ namespace HackAssembler.Core
             }
             catch(Exception ex)
             {
-                return new ParseResult { Type = ParsedType.Unrecognised, Error = ex.Message };
+                return new ParseResult { Type = ParsedType.Invalid, Error = ex.Message };
             }
         }
 
@@ -64,7 +82,7 @@ namespace HackAssembler.Core
         {
             line = line[1..];
             if (line == "")
-                return new ParseResult { Type = ParsedType.Unrecognised, Error = "Empty addresses are not permitted." };
+                return new ParseResult { Type = ParsedType.Invalid, Error = "Empty addresses are not permitted." };
             var result = new ParseResult { Type = ParsedType.AInstruction };
             if (int.TryParse(line, out int addr))
                 result.Address = addr;

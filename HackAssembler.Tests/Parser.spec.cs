@@ -138,7 +138,7 @@ namespace HackAssembler.Tests
         public void ShouldRaiseErrorForInvalidDest()
         {
             ParseResult result = parser.Parse("Z=M+1");
-            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Type.Should().Be(ParsedType.Invalid);
             result.Error.Should().Be("Requested value 'Z' was not found.");
         }
 
@@ -146,7 +146,7 @@ namespace HackAssembler.Tests
         public void ShouldRaiseErrorForInvalidJump()
         {
             ParseResult result = parser.Parse("A=M+1;JUMP");
-            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Type.Should().Be(ParsedType.Invalid);
             result.Error.Should().Be("Requested value 'JUMP' was not found.");
         }
 
@@ -154,7 +154,7 @@ namespace HackAssembler.Tests
         public void ShouldRaiseErrorForInvalidComp()
         {
             ParseResult result = parser.Parse("M=Z+1");
-            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Type.Should().Be(ParsedType.Invalid);
             result.Error.Should().Be("The given key 'Z+1' was not present in the dictionary.");
         }
 
@@ -162,7 +162,7 @@ namespace HackAssembler.Tests
         public void ShouldRaiseErrorForInvalidLabel()
         {
             ParseResult result = parser.Parse("(SOMETHING");
-            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Type.Should().Be(ParsedType.Invalid);
             result.Error.Should().Be("The given key '(SOMETHING' was not present in the dictionary.");
         }
 
@@ -170,7 +170,7 @@ namespace HackAssembler.Tests
         public void ShouldRaiseErrorForEmptyLabel()
         {
             ParseResult result = parser.Parse("()");
-            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Type.Should().Be(ParsedType.Invalid);
             result.Error.Should().Be("Empty labels are not permitted.");
         }
 
@@ -178,7 +178,7 @@ namespace HackAssembler.Tests
         public void ShouldRaiseErrorForEmptyAddress()
         {
             ParseResult result = parser.Parse("@");
-            result.Type.Should().Be(ParsedType.Unrecognised);
+            result.Type.Should().Be(ParsedType.Invalid);
             result.Error.Should().Be("Empty addresses are not permitted.");
         }
     }
@@ -202,10 +202,66 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldSetAddressOfLabels()
         {
-            Dictionary<string, int> dict = parser.BuildSymbolTable(result1, result2, new ParseResult { Type = ParsedType.Label, Label = "LOOP" }, result3);
+            ParseResult label = new ParseResult { Type = ParsedType.Label, Label = "LOOP" };
+            Dictionary<string, int> dict = parser.BuildSymbolTable(result1, result2, label, result3);
             dict.Should().HaveCount(1);
             dict.Should().ContainKey("LOOP");
             dict["LOOP"].Should().Be(2);
+        }
+
+        [TestMethod]
+        public void ShouldSetAddressOfVariables()
+        {
+            ParseResult variable = new ParseResult { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
+            Dictionary<string, int> dict = parser.BuildSymbolTable(result1, result2, variable, result3);
+            dict.Should().HaveCount(1);
+            dict.Should().ContainKey("counter");
+            dict["counter"].Should().Be(16);
+        }
+
+        [TestMethod]
+        public void ShouldSetAddressOfMultipleVariables()
+        {
+            ParseResult variable1 = new ParseResult { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
+            ParseResult variable2 = new ParseResult { Type = ParsedType.AInstruction, AddressSymbol = "temp" };
+            Dictionary<string, int> dict = parser.BuildSymbolTable(result1, result2, variable1, variable2, result3);
+            dict.Should().HaveCount(2);
+            dict.Should().ContainKey("counter").And.ContainKey("temp");
+            dict["counter"].Should().Be(16);
+            dict["temp"].Should().Be(17);
+        }
+
+        [TestMethod]
+        public void ShouldUsePreviouslyAssignedAddressInSubsequentVariableReferences()
+        {
+            ParseResult variable1 = new ParseResult { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
+            ParseResult variable2 = new ParseResult { Type = ParsedType.AInstruction, AddressSymbol = "temp" };
+            ParseResult variable3 = new ParseResult { Type = ParsedType.AInstruction, AddressSymbol = "i" };
+            Dictionary<string, int> dict = parser.BuildSymbolTable(variable1, variable2, result3, variable1, variable3);
+            dict.Should().HaveCount(3);
+            dict.Should().ContainKey("counter").And.ContainKey("temp").And.ContainKey("i");
+            dict["counter"].Should().Be(16);
+            dict["temp"].Should().Be(17);
+            dict["i"].Should().Be(18);
+        }
+
+        [TestMethod]
+        public void ShouldIgnoreAInstructionsWithANumericAddress()
+        {
+            ParseResult variable1 = new ParseResult { Type = ParsedType.AInstruction, Address = 123 };
+            ParseResult variable2 = new ParseResult { Type = ParsedType.AInstruction, AddressSymbol = "temp" };
+            Dictionary<string, int> dict = parser.BuildSymbolTable(variable1, variable2);
+            dict.Should().HaveCount(1);
+        }
+
+        [TestMethod]
+        public void ShouldMarkAsErrorIfThereAreDuplicateLabels()
+        {
+            ParseResult label1 = new ParseResult { Type = ParsedType.Label, Label = "LOOP" };
+            ParseResult label2 = new ParseResult { Type = ParsedType.Label, Label = "LOOP" };
+            Dictionary<string, int> dict = parser.BuildSymbolTable(result1, result2, label1, result3, label2);
+            label2.Type.Should().Be(ParsedType.Invalid);
+            label2.Error.Should().Be("Duplicated label.");
         }
     }
     #endregion

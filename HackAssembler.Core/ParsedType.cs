@@ -6,6 +6,6 @@
         Label,
         AInstruction,
         CInstruction,
-        Unrecognised
+        Invalid
     }
 }
