@@ -1,13 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace HackAssembler.Core
 {
     public class SymbolTableBuilder : ISymbolTableBuilder
     {
+        private const int empty = -1;
+
         public Dictionary<string, int> BuildSymbolTable(params ParsedLine[] parsedLines)
         {
-            int pc = 0;
-            var firstPass = new Dictionary<string, int?> {
+            var table = new Dictionary<string, int> {
                 {"R0", 0 },
                 {"R1", 1 },
                 {"R2", 2 },
@@ -32,12 +34,14 @@ namespace HackAssembler.Core
                 {"THIS", 3 },
                 {"THAT", 4 }
             };
+
+            int pc = 0;
             foreach (var parsedLine in parsedLines)
             {
                 if (parsedLine.Type == ParsedType.Label)
                 {
-                    if (!firstPass.ContainsKey(parsedLine.Label) || firstPass[parsedLine.Label] == null)
-                        firstPass[parsedLine.Label] = pc;
+                    if (!table.ContainsKey(parsedLine.Label) || table[parsedLine.Label] == empty)
+                        table[parsedLine.Label] = pc;
                     else
                     {
                         parsedLine.Type = ParsedType.Invalid;
@@ -46,31 +50,22 @@ namespace HackAssembler.Core
                 }
                 if (parsedLine.Type == ParsedType.AInstruction && parsedLine.AddressSymbol != null)
                 {
-                    if (!firstPass.ContainsKey(parsedLine.AddressSymbol))
-                    {
-                        firstPass.Add(parsedLine.AddressSymbol, null);
-                    }
+                    if (!table.ContainsKey(parsedLine.AddressSymbol))
+                        table.Add(parsedLine.AddressSymbol, empty);
                 }
                 if (parsedLine.Type == ParsedType.AInstruction || parsedLine.Type == ParsedType.CInstruction)
                     pc++;
             }
 
-            var secondPass = new Dictionary<string, int>();
-
             int variableAddress = 16;
-            foreach (KeyValuePair<string, int?> result in firstPass)
+            string[] variables = table.Where(r => r.Value == empty).Select(r => r.Key).ToArray();
+            foreach (string variable in variables)
             {
-                if (result.Value == null)
-                {
-                    secondPass.Add(result.Key, variableAddress);
-                    variableAddress++;
-                }
-                else
-                {
-                    secondPass.Add(result.Key, result.Value.Value);
-                }
+                table[variable] = variableAddress;
+                variableAddress++;
             }
-            return secondPass;
+
+            return table;
         }
 
     }
