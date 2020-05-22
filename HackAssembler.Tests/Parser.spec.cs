@@ -99,12 +99,24 @@ namespace HackAssembler.Tests
         }
 
         [TestMethod]
+        public void ShouldSetNoJumpIfThereIsNoJumpSpecified()
+        {
+            parser.Parse("M=D+1").Jump.Should().Be(Jump.NoJump);
+        }
+
+        [TestMethod]
+        public void ShouldSetDestToNotStoredIfThereIsNoDestSpecified()
+        {
+            parser.Parse("D+1;JEQ").Dest.Should().Be(Dest.NotStored);
+        }
+
+        [TestMethod]
         public void ShouldSetCorrectJumpDetailsWithoutDest()
         {
             ParsedLine result = parser.Parse("D&M;JGE");
             result.Comp.Should().Be(Comp.DAndM);
             result.Type.Should().Be(ParsedType.CInstruction);
-            result.Dest.Should().BeNull();
+            result.Dest.Should().Be(Dest.NotStored);
             result.Jump.Should().Be(Jump.JGE);
         }
 

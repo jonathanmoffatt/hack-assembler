@@ -36,9 +36,9 @@ namespace HackAssembler.Core
                 return new ParsedLine
                 {
                     Type = ParsedType.CInstruction,
-                    Dest = hasDest ? Enum.Parse<Dest>(split[0]) : (Dest?)null,
+                    Dest = hasDest ? Enum.Parse<Dest>(split[0]) : Dest.NotStored,
                     Comp = compMappings[split[hasDest ? 1 : 0]],
-                    Jump = hasJump ? Enum.Parse<Jump>(split[hasDest ? 2 : 1]) : (Jump?)null
+                    Jump = hasJump ? Enum.Parse<Jump>(split[hasDest ? 2 : 1]) : Jump.NoJump
                 };
             }
             catch(Exception ex)

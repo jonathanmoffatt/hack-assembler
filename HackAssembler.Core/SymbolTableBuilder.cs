@@ -44,9 +44,7 @@ namespace HackAssembler.Core
                         parsedLine.Type = ParsedType.Invalid;
                         parsedLine.Error = "Duplicated label.";
                     }
-
                 }
-                pc++;
                 if (parsedLine.Type == ParsedType.AInstruction && parsedLine.AddressSymbol != null)
                 {
                     if (!result.ContainsKey(parsedLine.AddressSymbol))
@@ -55,6 +53,8 @@ namespace HackAssembler.Core
                         variableAddress++;
                     }
                 }
+                if (parsedLine.Type == ParsedType.AInstruction || parsedLine.Type == ParsedType.CInstruction)
+                    pc++;
             }
             return result;
         }

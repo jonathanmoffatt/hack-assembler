@@ -10,9 +10,9 @@ namespace HackAssembler.Tests
     public class WhenBuildingASymbolTAble
     {
         private SymbolTableBuilder symbolTableBuilder;
-        private readonly ParsedLine result1 = new ParsedLine { Comp = Comp.AMinusD };
-        private readonly ParsedLine result2 = new ParsedLine { Comp = Comp.MPlusOne };
-        private readonly ParsedLine result3 = new ParsedLine { Comp = Comp.DAndM };
+        private readonly ParsedLine line1 = new ParsedLine { Type = ParsedType.CInstruction, Comp = Comp.AMinusD };
+        private readonly ParsedLine line2 = new ParsedLine { Type = ParsedType.CInstruction, Comp = Comp.MPlusOne };
+        private readonly ParsedLine line3 = new ParsedLine { Type = ParsedType.CInstruction, Comp = Comp.DAndM };
 
         [TestInitialize]
         public void Setup()
@@ -59,7 +59,7 @@ namespace HackAssembler.Tests
         public void ShouldSetAddressOfLabels()
         {
             ParsedLine label = new ParsedLine { Type = ParsedType.Label, Label = "LOOP" };
-            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(result1, result2, label, result3);
+            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(line1, line2, label, line3);
             dict.Should().ContainKey("LOOP");
             dict["LOOP"].Should().Be(2);
         }
@@ -68,7 +68,7 @@ namespace HackAssembler.Tests
         public void ShouldSetAddressOfVariables()
         {
             ParsedLine variable = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
-            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(result1, result2, variable, result3);
+            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(line1, line2, variable, line3);
             dict.Should().ContainKey("counter");
             dict["counter"].Should().Be(16);
         }
@@ -78,7 +78,7 @@ namespace HackAssembler.Tests
         {
             ParsedLine variable1 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
             ParsedLine variable2 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "temp" };
-            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(result1, result2, variable1, variable2, result3);
+            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(line1, line2, variable1, variable2, line3);
             dict.Should().ContainKey("counter").And.ContainKey("temp");
             dict["counter"].Should().Be(16);
             dict["temp"].Should().Be(17);
@@ -90,11 +90,27 @@ namespace HackAssembler.Tests
             ParsedLine variable1 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
             ParsedLine variable2 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "temp" };
             ParsedLine variable3 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "i" };
-            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(variable1, variable2, result3, variable1, variable3);
+            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(variable1, variable2, line3, variable1, variable3);
             dict.Should().ContainKey("counter").And.ContainKey("temp").And.ContainKey("i");
             dict["counter"].Should().Be(16);
             dict["temp"].Should().Be(17);
             dict["i"].Should().Be(18);
+        }
+
+        [TestMethod]
+        public void ShouldNotIncrementProgramCounterForLabelsAndWhitespace()
+        {
+            ParsedLine whitespace = new ParsedLine { Type = ParsedType.Whitespace };
+            ParsedLine comp1 = new ParsedLine { Type = ParsedType.CInstruction };
+            ParsedLine comp2 = new ParsedLine { Type = ParsedType.CInstruction };
+            ParsedLine label1 = new ParsedLine { Type = ParsedType.Label, Label = "LOOP"};
+            ParsedLine comp3 = new ParsedLine { Type = ParsedType.CInstruction };
+            ParsedLine comp4 = new ParsedLine { Type = ParsedType.CInstruction };
+            ParsedLine label2 = new ParsedLine { Type = ParsedType.Label, Label = "FINISH"};
+            ParsedLine comp5 = new ParsedLine { Type = ParsedType.CInstruction };
+            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(whitespace, comp1, comp2, whitespace, label1, comp3, comp4, whitespace, whitespace, label2, comp5);
+            dict["LOOP"].Should().Be(2);
+            dict["FINISH"].Should().Be(4);
         }
 
         [TestMethod]
@@ -111,7 +127,7 @@ namespace HackAssembler.Tests
         {
             ParsedLine label1 = new ParsedLine { Type = ParsedType.Label, Label = "LOOP" };
             ParsedLine label2 = new ParsedLine { Type = ParsedType.Label, Label = "LOOP" };
-            symbolTableBuilder.BuildSymbolTable(result1, result2, label1, result3, label2);
+            symbolTableBuilder.BuildSymbolTable(line1, line2, label1, line3, label2);
             label2.Type.Should().Be(ParsedType.Invalid);
             label2.Error.Should().Be("Duplicated label.");
         }
