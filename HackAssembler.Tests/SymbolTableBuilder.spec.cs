@@ -114,6 +114,21 @@ namespace HackAssembler.Tests
         }
 
         [TestMethod]
+        public void ShouldDistinguishBetweenVariablesAndLabels()
+        {
+            ParsedLine referenceToVariable = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
+            ParsedLine comp1 = new ParsedLine { Type = ParsedType.CInstruction };
+            ParsedLine comp2 = new ParsedLine { Type = ParsedType.CInstruction };
+            ParsedLine referenceToLabel = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "FINISH" };
+            ParsedLine comp3 = new ParsedLine { Type = ParsedType.CInstruction };
+            ParsedLine label2 = new ParsedLine { Type = ParsedType.Label, Label = "FINISH"};
+            ParsedLine comp4 = new ParsedLine { Type = ParsedType.CInstruction };
+            Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(referenceToVariable, comp1, comp2, referenceToLabel, comp3, label2, comp4);
+            dict["counter"].Should().Be(16);
+            dict["FINISH"].Should().Be(5);
+        }
+
+        [TestMethod]
         public void ShouldIgnoreAInstructionsWithANumericAddress()
         {
             ParsedLine variable1 = new ParsedLine { Type = ParsedType.AInstruction, Address = 123 };

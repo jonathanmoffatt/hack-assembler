@@ -7,8 +7,7 @@ namespace HackAssembler.Core
         public Dictionary<string, int> BuildSymbolTable(params ParsedLine[] parsedLines)
         {
             int pc = 0;
-            int variableAddress = 16;
-            var result = new Dictionary<string, int> {
+            var firstPass = new Dictionary<string, int?> {
                 {"R0", 0 },
                 {"R1", 1 },
                 {"R2", 2 },
@@ -37,8 +36,8 @@ namespace HackAssembler.Core
             {
                 if (parsedLine.Type == ParsedType.Label)
                 {
-                    if (!result.ContainsKey(parsedLine.Label))
-                        result.Add(parsedLine.Label, pc);
+                    if (!firstPass.ContainsKey(parsedLine.Label) || firstPass[parsedLine.Label] == null)
+                        firstPass[parsedLine.Label] = pc;
                     else
                     {
                         parsedLine.Type = ParsedType.Invalid;
@@ -47,16 +46,31 @@ namespace HackAssembler.Core
                 }
                 if (parsedLine.Type == ParsedType.AInstruction && parsedLine.AddressSymbol != null)
                 {
-                    if (!result.ContainsKey(parsedLine.AddressSymbol))
+                    if (!firstPass.ContainsKey(parsedLine.AddressSymbol))
                     {
-                        result.Add(parsedLine.AddressSymbol, variableAddress);
-                        variableAddress++;
+                        firstPass.Add(parsedLine.AddressSymbol, null);
                     }
                 }
                 if (parsedLine.Type == ParsedType.AInstruction || parsedLine.Type == ParsedType.CInstruction)
                     pc++;
             }
-            return result;
+
+            var secondPass = new Dictionary<string, int>();
+
+            int variableAddress = 16;
+            foreach (KeyValuePair<string, int?> result in firstPass)
+            {
+                if (result.Value == null)
+                {
+                    secondPass.Add(result.Key, variableAddress);
+                    variableAddress++;
+                }
+                else
+                {
+                    secondPass.Add(result.Key, result.Value.Value);
+                }
+            }
+            return secondPass;
         }
 
     }
