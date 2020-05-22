@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using HackAssembler.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,15 +18,37 @@ namespace HackAssembler
 
             DisplayIntro();
             if (!CheckSourceFileOk(args)) return;
+            bool consoleOnly = args.Length > 1 && args[1] == "--console-only";
 
             IParser parser = serviceProvider.GetRequiredService<IParser>();
+            ISymbolTableBuilder symbolTableBuilder = serviceProvider.GetRequiredService<ISymbolTableBuilder>();
+            IAssembler assembler = serviceProvider.GetRequiredService<IAssembler>();
             string sourceFile = args[0];
             using var stream = File.OpenText(sourceFile);
-            var parsedLines = new List<ParseResult>();
+            var parsedLines = new List<ParsedLine>();
             string line;
             while ((line = stream.ReadLine()) != null)
             {
                 parsedLines.Add(parser.Parse(line));
+            }
+            Dictionary<string, int> symbolTable = symbolTableBuilder.BuildSymbolTable(parsedLines.ToArray());
+
+            bool valid = true;
+            int lineNumber = 1;
+            foreach (var parsedLine in parsedLines)
+            {
+                if (parsedLine.Type == ParsedType.Invalid)
+                {
+                    Console.WriteLine($"Line {lineNumber}: {parsedLine.Error}");
+                    valid = false;
+                }
+            }
+            if (!valid) return;
+
+            foreach (var parsedLine in parsedLines)
+            {
+                string binary = assembler.ConvertToBinary(parsedLine, symbolTable);
+                Console.WriteLine(binary);
             }
 
             /*
@@ -98,6 +121,7 @@ namespace HackAssembler
                   .AddLogging((ILoggingBuilder loggingBuilder) => { loggingBuilder.AddConsole(); })
                   .Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.Information)
                   .AddSingleton<IParser, Parser>()
+                  .AddSingleton<ISymbolTableBuilder, SymbolTableBuilder>()
                   .BuildServiceProvider();
         }
 

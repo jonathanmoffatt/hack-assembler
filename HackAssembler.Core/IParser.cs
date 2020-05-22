@@ -4,7 +4,6 @@ namespace HackAssembler.Core
 {
     public interface IParser
     {
-        ParseResult Parse(string line);
-        Dictionary<string, int> BuildSymbolTable(params ParseResult[] parsedLines);
+        ParsedLine Parse(string line);
     }
 }

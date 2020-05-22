@@ -1,6 +1,6 @@
 ﻿namespace HackAssembler.Core
 {
-    public class ParseResult
+    public class ParsedLine
     {
         public ParsedType Type { get; set; }
         public int? Address { get; set; }
