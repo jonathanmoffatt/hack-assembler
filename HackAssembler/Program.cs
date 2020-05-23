@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using HackAssembler.Core;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace HackAssembler
 {
@@ -11,73 +10,18 @@ namespace HackAssembler
     {
         static void Main(string[] args)
         {
-            ServiceProvider serviceProvider = SetupIocAndLogging();
-            //var logger = GetLogger(serviceProvider);
-            //logger.LogInformation("Starting application");
-
             DisplayIntro();
-            if (!CheckSourceFileOk(args)) return;
-            bool consoleOnly = args.Length > 1 && args[1] == "--console-only";
-
-            IParser parser = serviceProvider.GetRequiredService<IParser>();
-            ISymbolTableBuilder symbolTableBuilder = serviceProvider.GetRequiredService<ISymbolTableBuilder>();
-            IAssembler assembler = serviceProvider.GetRequiredService<IAssembler>();
+            if (!CheckSourceFileOk(args))
+                return;
             string sourceFile = args[0];
 
-            using var stream = File.OpenText(sourceFile);
-            var parsedLines = new List<ParsedLine>();
-            string line;
-            while ((line = stream.ReadLine()) != null)
-            {
-                parsedLines.Add(parser.Parse(line));
-            }
-            Dictionary<string, int> symbolTable = symbolTableBuilder.BuildSymbolTable(parsedLines.ToArray());
+            LineOfCode[] parsedLines = Parse(sourceFile);
+            Dictionary<string, int> symbolTable = BuildSymbolTable(parsedLines);
+            if (!CheckForParsingErrors(parsedLines))
+                return;
 
-            bool valid = true;
-            int lineNumber = 1;
-            foreach (var parsedLine in parsedLines)
-            {
-                if (parsedLine.Type == ParsedType.Invalid)
-                {
-                    Console.WriteLine($"Line {lineNumber}: {parsedLine.Error}");
-                    valid = false;
-                }
-            }
-            if (!valid) return;
-
-            var results = new List<string>();
-            foreach (var parsedLine in parsedLines)
-            {
-                string binary = assembler.ConvertToBinary(parsedLine, symbolTable);
-                if (binary != null) results.Add(binary);
-            }
-            if (consoleOnly)
-            {
-                results.ForEach(r => Console.WriteLine(r));
-            }
-            else
-            {
-                string outputFile = $"{Path.GetDirectoryName(sourceFile)}/{Path.GetFileNameWithoutExtension(sourceFile)}.hack";
-                if (File.Exists(outputFile)) File.Delete(outputFile);
-                File.WriteAllLines(outputFile, results.ToArray());
-                Console.WriteLine($"Results written to {outputFile}");
-            }
-        }
-
-        private static ILogger<Program> GetLogger(ServiceProvider serviceProvider)
-        {
-            return serviceProvider.GetService<ILoggerFactory>().CreateLogger<Program>();
-        }
-
-        private static ServiceProvider SetupIocAndLogging()
-        {
-            return new ServiceCollection()
-                  .AddLogging((ILoggingBuilder loggingBuilder) => { loggingBuilder.AddConsole(); })
-                  .Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.Information)
-                  .AddSingleton<IParser, Parser>()
-                  .AddSingleton<ISymbolTableBuilder, SymbolTableBuilder>()
-                  .AddSingleton<IAssembler, Assembler>()
-                  .BuildServiceProvider();
+            string[] results = Assemble(parsedLines, symbolTable);
+            WriteToOutput(args, sourceFile, results);
         }
 
         private static void DisplayIntro()
@@ -112,5 +56,77 @@ namespace HackAssembler
                 Console.WriteLine(error);
             return error == null;
         }
+
+        private static LineOfCode[] Parse(string sourceFile)
+        {
+            var parser = new Parser();
+            var parsedLines = new List<LineOfCode>();
+            using (var stream = File.OpenText(sourceFile))
+            {
+                string line;
+                while ((line = stream.ReadLine()) != null)
+                {
+                    parsedLines.Add(parser.Parse(line));
+                }
+            }
+            return parsedLines.ToArray();
+        }
+
+        private static string[] Assemble(LineOfCode[] parsedLines, Dictionary<string, int> symbolTable)
+        {
+            var assembler = new Assembler();
+            var results = new List<string>();
+            foreach (var parsedLine in parsedLines)
+            {
+                string binary = assembler.ConvertToBinary(parsedLine, symbolTable);
+                if (binary != null) results.Add(binary);
+            }
+            return results.ToArray();
+        }
+
+        private static Dictionary<string, int> BuildSymbolTable(LineOfCode[] parsedLines)
+        {
+            var symbolTableBuilder = new SymbolTableBuilder();
+            Dictionary<string, int> symbolTable = symbolTableBuilder.BuildSymbolTable(parsedLines);
+            return symbolTable;
+        }
+
+        private static bool CheckForParsingErrors(LineOfCode[] parsedLines)
+        {
+            bool valid = true;
+            int lineNumber = 1;
+            foreach (var parsedLine in parsedLines)
+            {
+                if (parsedLine.Type == InstructionType.Invalid)
+                {
+                    Console.WriteLine($"Line {lineNumber}: {parsedLine.Error}");
+                    valid = false;
+                }
+            }
+
+            return valid;
+        }
+
+        private static bool IsConsoleOnly(string[] args)
+        {
+            return args.Length > 1 && args[1] == "--console-only";
+        }
+
+        private static void WriteToOutput(string[] args, string sourceFile, string[] results)
+        {
+            if (IsConsoleOnly(args))
+            {
+                results.ToList().ForEach(r => Console.WriteLine(r));
+            }
+            else
+            {
+                string outputFile = $"{Path.GetDirectoryName(sourceFile)}/{Path.GetFileNameWithoutExtension(sourceFile)}.hack";
+                if (File.Exists(outputFile))
+                    File.Delete(outputFile);
+                File.WriteAllLines(outputFile, results);
+                Console.WriteLine($"Results written to {outputFile}");
+            }
+        }
+
     }
 }

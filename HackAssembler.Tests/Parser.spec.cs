@@ -20,37 +20,37 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldIdentifyEmptyLineAsWhitespace()
         {
-            parser.Parse("").Type.Should().Be(ParsedType.Whitespace);
+            parser.Parse("").Type.Should().Be(InstructionType.Whitespace);
         }
 
         [TestMethod]
         public void ShouldIdentifyLineOfSpacesAndTabsAsWhitespace()
         {
-            parser.Parse("   \t\t  \t").Type.Should().Be(ParsedType.Whitespace);
+            parser.Parse("   \t\t  \t").Type.Should().Be(InstructionType.Whitespace);
         }
 
         [TestMethod]
         public void ShouldIdentifyCommentsAsWhitespace()
         {
-            parser.Parse("// stuff n things").Type.Should().Be(ParsedType.Whitespace);
+            parser.Parse("// stuff n things").Type.Should().Be(InstructionType.Whitespace);
         }
 
         [TestMethod]
         public void ShouldIdentifyAInstruction()
         {
-            parser.Parse("@1003").Type.Should().Be(ParsedType.AInstruction);
+            parser.Parse("@1003").Type.Should().Be(InstructionType.AInstruction);
         }
 
         [TestMethod]
         public void ShouldIdentifyIndentedAInstruction()
         {
-            parser.Parse("    @1003").Type.Should().Be(ParsedType.AInstruction);
+            parser.Parse("    @1003").Type.Should().Be(InstructionType.AInstruction);
         }
 
         [TestMethod]
         public void ShouldIdentifyIndentedByTabsAInstruction()
         {
-            parser.Parse("\t\t@1003").Type.Should().Be(ParsedType.AInstruction);
+            parser.Parse("\t\t@1003").Type.Should().Be(InstructionType.AInstruction);
         }
 
         [TestMethod]
@@ -83,7 +83,7 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldIdentifyCInstruction()
         {
-            parser.Parse("M=D+1").Type.Should().Be(ParsedType.CInstruction);
+            parser.Parse("M=D+1").Type.Should().Be(InstructionType.CInstruction);
         }
 
         [TestMethod]
@@ -113,9 +113,9 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldSetCorrectJumpDetailsWithoutDest()
         {
-            ParsedLine result = parser.Parse("D&M;JGE");
+            LineOfCode result = parser.Parse("D&M;JGE");
             result.Comp.Should().Be(Comp.DAndM);
-            result.Type.Should().Be(ParsedType.CInstruction);
+            result.Type.Should().Be(InstructionType.CInstruction);
             result.Dest.Should().Be(Dest.NotStored);
             result.Jump.Should().Be(Jump.JGE);
         }
@@ -123,9 +123,9 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldSetCorrectJumpDetailsWithDest()
         {
-            ParsedLine result = parser.Parse("AMD=D|A;JEQ");
+            LineOfCode result = parser.Parse("AMD=D|A;JEQ");
             result.Comp.Should().Be(Comp.DOrA);
-            result.Type.Should().Be(ParsedType.CInstruction);
+            result.Type.Should().Be(InstructionType.CInstruction);
             result.Dest.Should().Be(Dest.AMD);
             result.Jump.Should().Be(Jump.JEQ);
         }
@@ -133,64 +133,64 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldSetLabelDetails()
         {
-            ParsedLine result = parser.Parse("(LOOP)");
-            result.Type.Should().Be(ParsedType.Label);
+            LineOfCode result = parser.Parse("(LOOP)");
+            result.Type.Should().Be(InstructionType.Label);
             result.Label.Should().Be("LOOP");
         }
 
         [TestMethod]
         public void ShouldTrimLabel()
         {
-            ParsedLine result = parser.Parse("(  LOOP  )");
-            result.Type.Should().Be(ParsedType.Label);
+            LineOfCode result = parser.Parse("(  LOOP  )");
+            result.Type.Should().Be(InstructionType.Label);
             result.Label.Should().Be("LOOP");
         }
 
         [TestMethod]
         public void ShouldRaiseErrorForInvalidDest()
         {
-            ParsedLine result = parser.Parse("Z=M+1");
-            result.Type.Should().Be(ParsedType.Invalid);
+            LineOfCode result = parser.Parse("Z=M+1");
+            result.Type.Should().Be(InstructionType.Invalid);
             result.Error.Should().Be("Requested value 'Z' was not found.");
         }
 
         [TestMethod]
         public void ShouldRaiseErrorForInvalidJump()
         {
-            ParsedLine result = parser.Parse("A=M+1;JUMP");
-            result.Type.Should().Be(ParsedType.Invalid);
+            LineOfCode result = parser.Parse("A=M+1;JUMP");
+            result.Type.Should().Be(InstructionType.Invalid);
             result.Error.Should().Be("Requested value 'JUMP' was not found.");
         }
 
         [TestMethod]
         public void ShouldRaiseErrorForInvalidComp()
         {
-            ParsedLine result = parser.Parse("M=Z+1");
-            result.Type.Should().Be(ParsedType.Invalid);
+            LineOfCode result = parser.Parse("M=Z+1");
+            result.Type.Should().Be(InstructionType.Invalid);
             result.Error.Should().Be("The given key 'Z+1' was not present in the dictionary.");
         }
 
         [TestMethod]
         public void ShouldRaiseErrorForInvalidLabel()
         {
-            ParsedLine result = parser.Parse("(SOMETHING");
-            result.Type.Should().Be(ParsedType.Invalid);
+            LineOfCode result = parser.Parse("(SOMETHING");
+            result.Type.Should().Be(InstructionType.Invalid);
             result.Error.Should().Be("The given key '(SOMETHING' was not present in the dictionary.");
         }
 
         [TestMethod]
         public void ShouldRaiseErrorForEmptyLabel()
         {
-            ParsedLine result = parser.Parse("()");
-            result.Type.Should().Be(ParsedType.Invalid);
+            LineOfCode result = parser.Parse("()");
+            result.Type.Should().Be(InstructionType.Invalid);
             result.Error.Should().Be("Empty labels are not permitted.");
         }
 
         [TestMethod]
         public void ShouldRaiseErrorForEmptyAddress()
         {
-            ParsedLine result = parser.Parse("@");
-            result.Type.Should().Be(ParsedType.Invalid);
+            LineOfCode result = parser.Parse("@");
+            result.Type.Should().Be(InstructionType.Invalid);
             result.Error.Should().Be("Empty addresses are not permitted.");
         }
     }

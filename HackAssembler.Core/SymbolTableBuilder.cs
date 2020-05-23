@@ -3,11 +3,11 @@ using System.Linq;
 
 namespace HackAssembler.Core
 {
-    public class SymbolTableBuilder : ISymbolTableBuilder
+    public class SymbolTableBuilder
     {
         private const int empty = -1;
 
-        public Dictionary<string, int> BuildSymbolTable(params ParsedLine[] parsedLines)
+        public Dictionary<string, int> BuildSymbolTable(params LineOfCode[] parsedLines)
         {
             var table = new Dictionary<string, int> {
                 {"R0", 0 },
@@ -38,22 +38,22 @@ namespace HackAssembler.Core
             int pc = 0;
             foreach (var parsedLine in parsedLines)
             {
-                if (parsedLine.Type == ParsedType.Label)
+                if (parsedLine.Type == InstructionType.Label)
                 {
                     if (!table.ContainsKey(parsedLine.Label) || table[parsedLine.Label] == empty)
                         table[parsedLine.Label] = pc;
                     else
                     {
-                        parsedLine.Type = ParsedType.Invalid;
+                        parsedLine.Type = InstructionType.Invalid;
                         parsedLine.Error = "Duplicated label.";
                     }
                 }
-                if (parsedLine.Type == ParsedType.AInstruction && parsedLine.AddressSymbol != null)
+                if (parsedLine.Type == InstructionType.AInstruction && parsedLine.AddressSymbol != null)
                 {
                     if (!table.ContainsKey(parsedLine.AddressSymbol))
                         table.Add(parsedLine.AddressSymbol, empty);
                 }
-                if (parsedLine.Type == ParsedType.AInstruction || parsedLine.Type == ParsedType.CInstruction)
+                if (parsedLine.Type == InstructionType.AInstruction || parsedLine.Type == InstructionType.CInstruction)
                     pc++;
             }
 

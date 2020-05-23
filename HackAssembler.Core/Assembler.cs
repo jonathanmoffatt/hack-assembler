@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace HackAssembler.Core
 {
-    public class Assembler: IAssembler
+    public class Assembler
     {
-        public string ConvertToBinary(ParsedLine parsedLine, Dictionary<string, int> symbolTable)
+        public string ConvertToBinary(LineOfCode parsedLine, Dictionary<string, int> symbolTable)
         {
             switch (parsedLine.Type)
             {
-                case ParsedType.AInstruction:
+                case InstructionType.AInstruction:
                     int address = parsedLine.Address.HasValue ? parsedLine.Address.Value : symbolTable[parsedLine.AddressSymbol];
                     return Convert.ToString(address, 2).PadLeft(16, '0');
-                case ParsedType.CInstruction:
+                case InstructionType.CInstruction:
                     string cBits = parsedLine.Comp.Value.GetAttribute<AssemblerMappingAttribute, Comp>().Binary;
                     string dBits = parsedLine.Dest.Value.GetAttribute<AssemblerMappingAttribute, Dest>().Binary;
                     string jBits = parsedLine.Jump.Value.GetAttribute<AssemblerMappingAttribute, Jump>().Binary;

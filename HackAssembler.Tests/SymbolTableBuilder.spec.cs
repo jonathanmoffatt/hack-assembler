@@ -10,9 +10,9 @@ namespace HackAssembler.Tests
     public class WhenBuildingASymbolTAble
     {
         private SymbolTableBuilder symbolTableBuilder;
-        private readonly ParsedLine line1 = new ParsedLine { Type = ParsedType.CInstruction, Comp = Comp.AMinusD };
-        private readonly ParsedLine line2 = new ParsedLine { Type = ParsedType.CInstruction, Comp = Comp.MPlusOne };
-        private readonly ParsedLine line3 = new ParsedLine { Type = ParsedType.CInstruction, Comp = Comp.DAndM };
+        private readonly LineOfCode line1 = new LineOfCode { Type = InstructionType.CInstruction, Comp = Comp.AMinusD };
+        private readonly LineOfCode line2 = new LineOfCode { Type = InstructionType.CInstruction, Comp = Comp.MPlusOne };
+        private readonly LineOfCode line3 = new LineOfCode { Type = InstructionType.CInstruction, Comp = Comp.DAndM };
 
         [TestInitialize]
         public void Setup()
@@ -58,7 +58,7 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldSetAddressOfLabels()
         {
-            ParsedLine label = new ParsedLine { Type = ParsedType.Label, Label = "LOOP" };
+            LineOfCode label = new LineOfCode { Type = InstructionType.Label, Label = "LOOP" };
             Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(line1, line2, label, line3);
             dict.Should().ContainKey("LOOP");
             dict["LOOP"].Should().Be(2);
@@ -67,7 +67,7 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldSetAddressOfVariables()
         {
-            ParsedLine variable = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
+            LineOfCode variable = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "counter" };
             Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(line1, line2, variable, line3);
             dict.Should().ContainKey("counter");
             dict["counter"].Should().Be(16);
@@ -76,8 +76,8 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldSetAddressOfMultipleVariables()
         {
-            ParsedLine variable1 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
-            ParsedLine variable2 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "temp" };
+            LineOfCode variable1 = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "counter" };
+            LineOfCode variable2 = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "temp" };
             Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(line1, line2, variable1, variable2, line3);
             dict.Should().ContainKey("counter").And.ContainKey("temp");
             dict["counter"].Should().Be(16);
@@ -87,9 +87,9 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldUsePreviouslyAssignedAddressInSubsequentVariableReferences()
         {
-            ParsedLine variable1 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
-            ParsedLine variable2 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "temp" };
-            ParsedLine variable3 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "i" };
+            LineOfCode variable1 = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "counter" };
+            LineOfCode variable2 = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "temp" };
+            LineOfCode variable3 = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "i" };
             Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(variable1, variable2, line3, variable1, variable3);
             dict.Should().ContainKey("counter").And.ContainKey("temp").And.ContainKey("i");
             dict["counter"].Should().Be(16);
@@ -100,14 +100,14 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldNotIncrementProgramCounterForLabelsAndWhitespace()
         {
-            ParsedLine whitespace = new ParsedLine { Type = ParsedType.Whitespace };
-            ParsedLine comp1 = new ParsedLine { Type = ParsedType.CInstruction };
-            ParsedLine comp2 = new ParsedLine { Type = ParsedType.CInstruction };
-            ParsedLine label1 = new ParsedLine { Type = ParsedType.Label, Label = "LOOP"};
-            ParsedLine comp3 = new ParsedLine { Type = ParsedType.CInstruction };
-            ParsedLine comp4 = new ParsedLine { Type = ParsedType.CInstruction };
-            ParsedLine label2 = new ParsedLine { Type = ParsedType.Label, Label = "FINISH"};
-            ParsedLine comp5 = new ParsedLine { Type = ParsedType.CInstruction };
+            LineOfCode whitespace = new LineOfCode { Type = InstructionType.Whitespace };
+            LineOfCode comp1 = new LineOfCode { Type = InstructionType.CInstruction };
+            LineOfCode comp2 = new LineOfCode { Type = InstructionType.CInstruction };
+            LineOfCode label1 = new LineOfCode { Type = InstructionType.Label, Label = "LOOP"};
+            LineOfCode comp3 = new LineOfCode { Type = InstructionType.CInstruction };
+            LineOfCode comp4 = new LineOfCode { Type = InstructionType.CInstruction };
+            LineOfCode label2 = new LineOfCode { Type = InstructionType.Label, Label = "FINISH"};
+            LineOfCode comp5 = new LineOfCode { Type = InstructionType.CInstruction };
             Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(whitespace, comp1, comp2, whitespace, label1, comp3, comp4, whitespace, whitespace, label2, comp5);
             dict["LOOP"].Should().Be(2);
             dict["FINISH"].Should().Be(4);
@@ -116,13 +116,13 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldDistinguishBetweenVariablesAndLabels()
         {
-            ParsedLine referenceToVariable = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
-            ParsedLine comp1 = new ParsedLine { Type = ParsedType.CInstruction };
-            ParsedLine comp2 = new ParsedLine { Type = ParsedType.CInstruction };
-            ParsedLine referenceToLabel = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "FINISH" };
-            ParsedLine comp3 = new ParsedLine { Type = ParsedType.CInstruction };
-            ParsedLine label2 = new ParsedLine { Type = ParsedType.Label, Label = "FINISH"};
-            ParsedLine comp4 = new ParsedLine { Type = ParsedType.CInstruction };
+            LineOfCode referenceToVariable = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "counter" };
+            LineOfCode comp1 = new LineOfCode { Type = InstructionType.CInstruction };
+            LineOfCode comp2 = new LineOfCode { Type = InstructionType.CInstruction };
+            LineOfCode referenceToLabel = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "FINISH" };
+            LineOfCode comp3 = new LineOfCode { Type = InstructionType.CInstruction };
+            LineOfCode label2 = new LineOfCode { Type = InstructionType.Label, Label = "FINISH"};
+            LineOfCode comp4 = new LineOfCode { Type = InstructionType.CInstruction };
             Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(referenceToVariable, comp1, comp2, referenceToLabel, comp3, label2, comp4);
             dict["counter"].Should().Be(16);
             dict["FINISH"].Should().Be(5);
@@ -131,8 +131,8 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldIgnoreAInstructionsWithANumericAddress()
         {
-            ParsedLine variable1 = new ParsedLine { Type = ParsedType.AInstruction, Address = 123 };
-            ParsedLine variable2 = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "temp" };
+            LineOfCode variable1 = new LineOfCode { Type = InstructionType.AInstruction, Address = 123 };
+            LineOfCode variable2 = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "temp" };
             Dictionary<string, int> dict = symbolTableBuilder.BuildSymbolTable(variable1, variable2);
             dict.Should().NotContainKey("123");
         }
@@ -140,10 +140,10 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldMarkAsErrorIfThereAreDuplicateLabels()
         {
-            ParsedLine label1 = new ParsedLine { Type = ParsedType.Label, Label = "LOOP" };
-            ParsedLine label2 = new ParsedLine { Type = ParsedType.Label, Label = "LOOP" };
+            LineOfCode label1 = new LineOfCode { Type = InstructionType.Label, Label = "LOOP" };
+            LineOfCode label2 = new LineOfCode { Type = InstructionType.Label, Label = "LOOP" };
             symbolTableBuilder.BuildSymbolTable(line1, line2, label1, line3, label2);
-            label2.Type.Should().Be(ParsedType.Invalid);
+            label2.Type.Should().Be(InstructionType.Invalid);
             label2.Error.Should().Be("Duplicated label.");
         }
     }

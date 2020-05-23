@@ -3,29 +3,29 @@ using System.Collections.Generic;
 
 namespace HackAssembler.Core
 {
-    public class Parser: IParser
+    public class Parser
     {
-        public ParsedLine Parse(string line)
+        public LineOfCode Parse(string line)
         {
             line = StripComments(line);
             if (line.StartsWith('@'))
                 return ParseAddress(line);
             else if (line == "")
-                return new ParsedLine { Type = ParsedType.Whitespace };
+                return new LineOfCode { Type = InstructionType.Whitespace };
             else if (line.StartsWith("(") && line.EndsWith(")"))
                 return ParseLabel(line);
             return ParseComputation(line);
         }
 
-        private static ParsedLine ParseLabel(string line)
+        private static LineOfCode ParseLabel(string line)
         {
             string label = line[1..^1].Trim();
             if (label == "")
-                return new ParsedLine { Type = ParsedType.Invalid, Error = "Empty labels are not permitted." };
-            return new ParsedLine { Type = ParsedType.Label, Label = label };
+                return new LineOfCode { Type = InstructionType.Invalid, Error = "Empty labels are not permitted." };
+            return new LineOfCode { Type = InstructionType.Label, Label = label };
         }
 
-        private ParsedLine ParseComputation(string line)
+        private LineOfCode ParseComputation(string line)
         {
             var compMappings = GetCompMappings();
             bool hasDest = line.Contains('=');
@@ -33,9 +33,9 @@ namespace HackAssembler.Core
             string[] split = line.Split(new[] { "=", ";" }, StringSplitOptions.RemoveEmptyEntries);
             try
             {
-                return new ParsedLine
+                return new LineOfCode
                 {
-                    Type = ParsedType.CInstruction,
+                    Type = InstructionType.CInstruction,
                     Dest = hasDest ? Enum.Parse<Dest>(split[0]) : Dest.NotStored,
                     Comp = compMappings[split[hasDest ? 1 : 0]],
                     Jump = hasJump ? Enum.Parse<Jump>(split[hasDest ? 2 : 1]) : Jump.NoJump
@@ -43,16 +43,16 @@ namespace HackAssembler.Core
             }
             catch(Exception ex)
             {
-                return new ParsedLine { Type = ParsedType.Invalid, Error = ex.Message };
+                return new LineOfCode { Type = InstructionType.Invalid, Error = ex.Message };
             }
         }
 
-        private static ParsedLine ParseAddress(string line)
+        private static LineOfCode ParseAddress(string line)
         {
             line = line[1..];
             if (line == "")
-                return new ParsedLine { Type = ParsedType.Invalid, Error = "Empty addresses are not permitted." };
-            var result = new ParsedLine { Type = ParsedType.AInstruction };
+                return new LineOfCode { Type = InstructionType.Invalid, Error = "Empty addresses are not permitted." };
+            var result = new LineOfCode { Type = InstructionType.AInstruction };
             if (int.TryParse(line, out int addr))
                 result.Address = addr;
             else

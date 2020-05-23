@@ -1,6 +1,6 @@
 ﻿namespace HackAssembler.Core
 {
-    public enum ParsedType
+    public enum InstructionType
     {
         Whitespace,
         Label,

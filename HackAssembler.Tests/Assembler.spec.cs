@@ -24,36 +24,36 @@ namespace HackAssembler.Tests
         [TestMethod]
         public void ShouldOutputNullForWhiteSpace()
         {
-            ParsedLine line = new ParsedLine { Type = ParsedType.Whitespace };
+            LineOfCode line = new LineOfCode { Type = InstructionType.Whitespace };
             classUnderTest.ConvertToBinary(line, symbolTable).Should().BeNull();
         }
 
         [TestMethod]
         public void ShouldOutputNullForLabels()
         {
-            ParsedLine line = new ParsedLine { Type = ParsedType.Label };
+            LineOfCode line = new LineOfCode { Type = InstructionType.Label };
             classUnderTest.ConvertToBinary(line, symbolTable).Should().BeNull();
         }
 
         [TestMethod]
         public void ShouldOutputCorrectBinaryForAddresses()
         {
-            ParsedLine line = new ParsedLine { Type = ParsedType.AInstruction, Address = 5 };
+            LineOfCode line = new LineOfCode { Type = InstructionType.AInstruction, Address = 5 };
             classUnderTest.ConvertToBinary(line, symbolTable).Should().Be("0000000000000101");
         }
 
         [TestMethod]
         public void ShouldOutputCorrectBinaryForAddressesExpressedAsSymbols()
         {
-            ParsedLine line = new ParsedLine { Type = ParsedType.AInstruction, AddressSymbol = "counter" };
+            LineOfCode line = new LineOfCode { Type = InstructionType.AInstruction, AddressSymbol = "counter" };
             classUnderTest.ConvertToBinary(line, symbolTable).Should().Be("0000000000010010");
         }
 
         [TestMethod]
         public void ShouldOutputCorrectBinaryForCInstructions()
         {
-            ParsedLine line = new ParsedLine {
-                Type = ParsedType.CInstruction,
+            LineOfCode line = new LineOfCode {
+                Type = InstructionType.CInstruction,
                 Dest = Dest.AM,
                 Comp = Comp.DMinusA,
                 Jump = Jump.JEQ

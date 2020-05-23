@@ -1,8 +1,8 @@
 ﻿namespace HackAssembler.Core
 {
-    public class ParsedLine
+    public class LineOfCode
     {
-        public ParsedType Type { get; set; }
+        public InstructionType Type { get; set; }
         public int? Address { get; set; }
         public string AddressSymbol { get; set; }
         public string Label { get; set; }
